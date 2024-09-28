@@ -11,6 +11,10 @@ def move_to_rust(move_code):
         (r'struct\s+([a-zA-Z0-9_]+)\s+has\s+.*?\s*{', r'struct \1 {'), # Remove Struct traits
         (r'fun', r'fn'), # Fun to fn
         (r':\s*([a-zA-Z0-9_]+)\s*{', r' -> \1 {'), # Return type from ":" to "->"
+        (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
+        (r'option::is_none\(&(\w+\.\w+)\)', r'\1.is_none()'), # Option is_none
+        (r'option::fill\(&mut (\w+\.\w+), (\w+)\)', r'\1 = Some(\2)'), # Option fill (assignment)
+        (r'option::extract\(&mut (\w+\.\w+)\)', r'\1.take()'), # Option extract (take)
     ]
 
     simplification_replacements = [
@@ -112,7 +116,7 @@ impl IdGetter {
         IdGetter { current_id: 0 }
     }
     
-    pub fn get_new_id(&mut self) -> u32 {
+    pub fn get_new_id(&mut self) -> u8 {
         self.current_id += 1;
         self.current_id
     }

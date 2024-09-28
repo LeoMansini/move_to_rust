@@ -18,7 +18,7 @@ impl IdGetter {
         IdGetter { current_id: 0 }
     }
     
-    pub fn get_new_id(&mut self) -> u32 {
+    pub fn get_new_id(&mut self) -> u8 {
         self.current_id += 1;
         self.current_id
     }
@@ -48,13 +48,13 @@ impl simple_warrior__example {
     }
 
     pub fn equip(warrior: &mut Warrior, sword: Sword) {
-        assert!(option::is_none(&warrior.sword), EAlreadyEquipped);
-        option::fill(&mut warrior.sword, sword);
+        assert!(warrior.sword.is_none(), EAlreadyEquipped);
+        warrior.sword = Some(sword);
     }
 
     pub fn unequip(warrior: &mut Warrior) -> Sword {
-        assert!(option::is_some(&warrior.sword), ENotEquipped);
-        option::extract(&mut warrior.sword)
+        assert!(warrior.sword.is_some(), ENotEquipped);
+        warrior.sword.take()
     }
 
     
