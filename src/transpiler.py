@@ -68,13 +68,19 @@ def move_structs_to_global_scope(code):
         braces_count -= lines[i].count('}')
         if "struct" in lines[i] and braces_count > 1:
             end_of_inside_struct = _get_end_of_scope_line(lines, i)
-            result_lines = lines[i:end_of_inside_struct + 1] + result_lines
+            struct_lines = lines[i:end_of_inside_struct + 1]
+            struct_lines = _remove_indentation_from_lines(struct_lines)
+            result_lines = struct_lines + result_lines
             i = end_of_inside_struct + 1
         else:
             result_lines.append(lines[i])
             i += 1
 
     return '\n'.join(result_lines)
+
+def _remove_indentation_from_lines(lines):
+    indentation = len(lines[0]) - len(lines[0].lstrip())
+    return [l[indentation:] for l in lines]
 
 def _get_end_of_scope_line(lines, start_line):
     i = start_line

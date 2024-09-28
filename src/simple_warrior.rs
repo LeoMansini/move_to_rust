@@ -1,12 +1,12 @@
-    pub struct Warrior {
-        id: u8,
-        sword: Option<Sword>,
-    }
+pub struct Warrior {
+    id: u8,
+    sword: Option<Sword>,
+}
 
-    pub struct Sword {
-        id: u8,
-        strength: u8,
-    }
+pub struct Sword {
+    id: u8,
+    strength: u8,
+}
 
 
 pub struct IdGetter {
@@ -56,4 +56,10 @@ impl simple_warrior__example {
         assert!(option::is_some(&warrior.sword), ENotEquipped);
         option::extract(&mut warrior.sword)
     }
+
+    
+    
+
+
+
 }
