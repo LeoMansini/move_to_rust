@@ -9,12 +9,16 @@ def move_to_rust(move_code):
         (r'resource\s+struct', r'struct'), # Structs
         (r'public', r'pub'), # Public to pub
         (r'struct\s+([a-zA-Z0-9_]+)\s+has\s+.*?\s*{', r'struct \1 {'), # Remove Struct traits
+        (r'entry fun', r'fun'), # Remove 'Entry'
         (r'fun', r'fn'), # Fun to fn
         (r':\s*([a-zA-Z0-9_]+)\s*{', r' -> \1 {'), # Return type from ":" to "->"
         (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
         (r'option::is_none\(&(\w+\.\w+)\)', r'\1.is_none()'), # Option is_none
-        (r'option::fill\(&mut (\w+\.\w+), (\w+)\)', r'\1 = Some(\2)'), # Option fill (assignment)
-        (r'option::extract\(&mut (\w+\.\w+)\)', r'\1.take()'), # Option extract (take)
+        (r'option::fill\(&mut (\w+\.\w+), (\w+)\)', r'\1.replace(\2).unwrap()'), # Option fill (assignment if is None)
+        (r'option::extract\(&mut (\w+\.\w+)\)', r'\1.take().unwrap()'), # Option extract (take)
+        (r'option::none\(\)', r'None'), # Option None
+        (r'assert!\((.+?),\s*(.+?)\)', r'assert!(\1, "{}", \2)'), # Assert with string literal
+        (r'ctx: &mut TxContext', r'') # Remove TxContxt. TODO: Might need to model this.
     ]
 
     simplification_replacements = [
@@ -31,7 +35,8 @@ def move_to_rust(move_code):
     func_replacements = [
         remove_test_functions,
         add_new_object_mock,
-        move_structs_to_global_scope,
+        move_structs_and_consts_to_global_scope,
+        remove_duplicate_line_breaks,
     ]
     
     rust_code = move_code
@@ -60,7 +65,7 @@ def remove_test_functions(code):
 
     return '\n'.join(result_lines)
 
-def move_structs_to_global_scope(code):
+def move_structs_and_consts_to_global_scope(code):
     lines = code.splitlines()
     result_lines = []
 
@@ -70,15 +75,26 @@ def move_structs_to_global_scope(code):
     while i < len(lines):
         braces_count += lines[i].count('{')
         braces_count -= lines[i].count('}')
-        if "struct" in lines[i] and braces_count > 1:
-            end_of_inside_struct = _get_end_of_scope_line(lines, i)
-            struct_lines = lines[i:end_of_inside_struct + 1]
-            struct_lines = _remove_indentation_from_lines(struct_lines)
-            result_lines = struct_lines + result_lines
-            i = end_of_inside_struct + 1
-        else:
-            result_lines.append(lines[i])
-            i += 1
+        if braces_count > 1:
+            if (
+                (lines[i].strip().startswith("struct"))
+                or (lines[i].strip().startswith("pub struct"))
+            ):
+                end_of_inside_struct = _get_end_of_scope_line(lines, i)
+                struct_lines = lines[i:end_of_inside_struct + 1]
+                struct_lines = _remove_indentation_from_lines(struct_lines)
+                result_lines = struct_lines + result_lines
+                i = end_of_inside_struct + 1
+                continue
+            elif lines[i].strip().startswith("const"):
+                const_line = [lines[i]]
+                const_line = _remove_indentation_from_lines(const_line)
+                result_lines = const_line + ["\n"] + result_lines
+                i += 1
+                continue
+
+        result_lines.append(lines[i])
+        i += 1
 
     return '\n'.join(result_lines)
 
@@ -107,29 +123,43 @@ def add_new_object_mock(code):
     """Replaces calls to object::new(ctx) which assigns a specific UID in the blockchain
     with calls to a local counter."""
     id_getter_code = '''
+use std::sync::LazyLock;
+
 pub struct IdGetter {
-    current_id: u32,
+    current_id: std::sync::Mutex<u8>,
 }
 
 impl IdGetter {
     pub fn new() -> Self {
-        IdGetter { current_id: 0 }
+        IdGetter {
+            current_id: std::sync::Mutex::new(0),
+        }
     }
-    
-    pub fn get_new_id(&mut self) -> u8 {
-        self.current_id += 1;
-        self.current_id
+
+    pub fn get_new_id(&self) -> u8 {
+        let mut id = self.current_id.lock().unwrap();
+        *id += 1;
+        *id
     }
 }
 
-// Create a global instance (for single-threaded or non-global use)
-pub static mut ID_GETTER: IdGetter = IdGetter::new();
+// Use LazyLock to initialize ID_GETTER
+pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 
 '''
     code = id_getter_code + code
     code = re.sub(r'object::new\(\w*\)', 'ID_GETTER.get_new_id()', code, flags=re.MULTILINE)
     return code
 
+def remove_duplicate_line_breaks(code):
+    lines = code.splitlines()
+    i = 1
+    while i < len(lines):
+        if len(lines[i].strip()) == 0 and len(lines[i-1].strip()) == 0:
+            del lines[i]
+        else:
+            i +=1
+    return "\n".join(lines)
 
 def process_files(input_filepath):
     try:
