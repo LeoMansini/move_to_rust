@@ -8,19 +8,23 @@ def move_to_rust(move_code):
         (r'module\s+([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+)', r'pub struct \1__\2 {}\nimpl \1__\2'), # "Module address::name"
         (r'resource\s+struct', r'struct'), # Structs
         (r'public', r'pub'), # Public to pub
-        (r'(pub struct (\w+)(?: has (key|store|drop)(, (key|store|drop))* )?{)', r'pub struct \2 {'), # Remove struct traits
+        (r'(pub struct (\w+)(<[^>]+>)?(?: has (copy|key|store|drop)(, (copy|key|store|drop))*)?\s*{)', r'pub struct \2 {'), # Remove type abilities
         (r'\(package\)', r''), # Remove 'package' scope
         (r'entry fun', r'fun'), # Remove 'Entry'
         (r'fun', r'fn'), # Fun to fn
-        (r':\s*([a-zA-Z0-9_]+(<T>)?)\s*{', r' -> \1 {'), # Return type from ":" to "->"
+        (r'ascii', r'string'), # No need for ascii
+        (r'string::String', r'string'), # Rename of string type
+        (r':\s*((&?mut )?&?[a-zA-Z0-9_]+(<[^>]+>)?)\s*{', r' -> \1 {'), # Return type from ":" to "->"
         (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
         (r'option::is_none\(&(\w+\.\w+)\)', r'\1.is_none()'), # Option is_none
         (r'option::fill\(&mut (\w+\.\w+), (\w+)\)', r'\1.replace(\2).unwrap()'), # Option fill (assignment if is None)
         (r'option::extract\(&mut (\w+\.\w+)\)', r'\1.take().unwrap()'), # Option extract (take)
         (r'option::none\(\)', r'None'), # Option None
+        (r'option::some\(\)', r'Some'), # Option Some
         (r'assert!\((.+?),\s*(.+?)\)', r'assert!(\1, "{}", \2)'), # Assert with string literal
-        (r'ctx: &mut TxContext', r''), # Remove TxContxt. TODO: Might need to model this.
+        (r'ctx: &mut TxContext(,?)', r''), # Remove TxContxt. TODO: Might need to model this.
         (r'phantom ', r''), # Remove phantom
+        (r'(pub )?use .*', r''), # Bye imports
     ]
 
     simplification_replacements = [
