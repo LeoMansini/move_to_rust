@@ -8,11 +8,11 @@ def move_to_rust(move_code):
         (r'module\s+([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+)', r'pub struct \1__\2 {}\nimpl \1__\2'), # "Module address::name"
         (r'resource\s+struct', r'struct'), # Structs
         (r'public', r'pub'), # Public to pub
-        (r'struct\s+([a-zA-Z0-9_]+<.*?>?)\s+has\s+.*?\s*{', r'struct \1 {'), # Remove Struct traits
+        (r'(pub struct (\w+)(?: has (key|store|drop)(, (key|store|drop))* )?{)', r'pub struct \2 {'), # Remove struct traits
         (r'\(package\)', r''), # Remove 'package' scope
         (r'entry fun', r'fun'), # Remove 'Entry'
         (r'fun', r'fn'), # Fun to fn
-        (r':\s*([a-zA-Z0-9_]+)\s*{', r' -> \1 {'), # Return type from ":" to "->"
+        (r':\s*([a-zA-Z0-9_]+(<T>)?)\s*{', r' -> \1 {'), # Return type from ":" to "->"
         (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
         (r'option::is_none\(&(\w+\.\w+)\)', r'\1.is_none()'), # Option is_none
         (r'option::fill\(&mut (\w+\.\w+), (\w+)\)', r'\1.replace(\2).unwrap()'), # Option fill (assignment if is None)
