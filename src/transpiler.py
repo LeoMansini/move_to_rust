@@ -8,7 +8,8 @@ def move_to_rust(move_code):
         (r'module\s+([a-zA-Z0-9_]+)::([a-zA-Z0-9_]+)', r'pub struct \1__\2 {}\nimpl \1__\2'), # "Module address::name"
         (r'resource\s+struct', r'struct'), # Structs
         (r'public', r'pub'), # Public to pub
-        (r'struct\s+([a-zA-Z0-9_]+)\s+has\s+.*?\s*{', r'struct \1 {'), # Remove Struct traits
+        (r'struct\s+([a-zA-Z0-9_]+<.*?>?)\s+has\s+.*?\s*{', r'struct \1 {'), # Remove Struct traits
+        (r'\(package\)', r''), # Remove 'package' scope
         (r'entry fun', r'fun'), # Remove 'Entry'
         (r'fun', r'fn'), # Fun to fn
         (r':\s*([a-zA-Z0-9_]+)\s*{', r' -> \1 {'), # Return type from ":" to "->"
@@ -18,7 +19,8 @@ def move_to_rust(move_code):
         (r'option::extract\(&mut (\w+\.\w+)\)', r'\1.take().unwrap()'), # Option extract (take)
         (r'option::none\(\)', r'None'), # Option None
         (r'assert!\((.+?),\s*(.+?)\)', r'assert!(\1, "{}", \2)'), # Assert with string literal
-        (r'ctx: &mut TxContext', r'') # Remove TxContxt. TODO: Might need to model this.
+        (r'ctx: &mut TxContext', r''), # Remove TxContxt. TODO: Might need to model this.
+        (r'phantom ', r''), # Remove phantom
     ]
 
     simplification_replacements = [
