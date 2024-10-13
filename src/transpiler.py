@@ -13,7 +13,7 @@ def move_to_rust(move_code):
         (r'entry fun', r'fun'), # Remove 'Entry'
         (r'fun', r'fn'), # Fun to fn
         (r'ascii', r'string'), # No need for ascii
-        (r'string::String', r'string'), # Rename of string type
+        (r'string::String', r'String'), # Rename of string type
         (r':\s*((&?mut )?&?[a-zA-Z0-9_]+(<[^>]+>)?)\s*{', r' -> \1 {'), # Return type from ":" to "->"
         (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
         (r'option::is_none\(&(\w+\.\w+)\)', r'\1.is_none()'), # Option is_none
@@ -25,6 +25,16 @@ def move_to_rust(move_code):
         (r'ctx: &mut TxContext(,?)', r''), # Remove TxContxt. TODO: Might need to model this.
         (r'phantom ', r''), # Remove phantom
         (r'(pub )?use .*', r''), # Bye imports
+        (r'Balance<[^>]+>', r'Balance'), # Balance type not parametric.
+        (r'Coin<[^>]+>', r'Coin'), # Coin type not parametric.
+        (r'Supply<[^>]+>', r'Supply'), # Supply type not parametric.
+        (r'TreasuryCap<[^>]+>', r'TreasuryCap'), # TreasuryCap type not parametric.
+        (r'CoinMetadata<[^>]+>', r'CoinMetadata'), # CoinMetadata type not parametric.
+        (r'Url', r'String'), # Use strings for URLs.
+        (r'UID', r'ID'), # Transform all to ID an then...
+        (r'ID', r'u8'), # Use u8 for ID.
+        (r'address', r'String'), # Use string for address type.
+        (r'vector<[^>]+>', r'Vec<\1>'), # Rename to rust vector type.
     ]
 
     simplification_replacements = [

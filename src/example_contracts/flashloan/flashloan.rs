@@ -1,6 +1,6 @@
 pub struct NFT {
     id: u8,
-    price: Balance<SUI>,
+    price: Balance,
 }
 
 pub struct Loan {
@@ -9,7 +9,7 @@ pub struct Loan {
 
 pub struct LoanPool {
     id: u8,
-    amount: Balance<SUI>,
+    amount: Balance,
 }
 
 use std::sync::LazyLock;

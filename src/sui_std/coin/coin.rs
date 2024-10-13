@@ -1,6 +1,9 @@
 
 use std::sync::LazyLock;
 
+use crate::sui_std::balance::balance::{Supply, Balance};
+use crate::sui_std::balance::balance;
+
 pub struct IdGetter {
     current_id: std::sync::Mutex<u8>,
 }
@@ -29,7 +32,7 @@ pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 /// tokens and coins. `Coin` can be described as a secure wrapper around
 /// `Balance` type.
 pub struct sui__coin {}
-impl sui__coin {}
+impl sui__coin;
 
 // Allows calling `.split_vec(amounts, ctx)` on `coin`
 
@@ -53,11 +56,11 @@ const EGlobalPauseNotAllowed: u64 = 3;
 /// A coin of type `T` worth `value`. Transferable and storable
 pub struct Coin {
     id: u8,
-    balance: Balance<T>,
+    balance: Balance,
 }
 
 /// Each Coin type T created through `create_currency` fnction will have a
-/// unique instance of CoinMetadata<T> that stores the metadata for this coin type.
+/// unique instance of CoinMetadata that stores the metadata for this coin type.
 pub struct CoinMetadata {
     id: u8,
     /// Number of decimal places the coin uses.
@@ -66,30 +69,30 @@ pub struct CoinMetadata {
     /// This is metadata for display usage only.
     decimals: u8,
     /// Name for the token
-    name: string,
+    name: String,
     /// Symbol for the token
-    symbol: string,
+    symbol: String,
     /// Description of the token
-    description: string,
+    description: String,
     /// URL for the token logo
-    icon_url: Option<Url>,
+    icon_url: Option<String>,
 }
 
 /// Similar to CoinMetadata, but created only for regulated coins that 
 /// This object is always immutable.
 pub struct RegulatedCoinMetadata {
     id: u8,
-    /// The ID of the coin's CoinMetadata object.
-    coin_metadata_object: ID,
-    /// The ID of the coin's DenyCap object.
-    deny_cap_object: ID,
+    /// The u8 of the coin's CoinMetadata object.
+    coin_metadata_object: u8,
+    /// The u8 of the coin's DenyCap object.
+    deny_cap_object: u8,
 }
 
 /// Capability allowing the bearer to mint and burn
 /// coins of type `T`. Transferable
 pub struct TreasuryCap {
     id: u8,
-    total_supply: Supply<T>,
+    total_supply: Supply,
 }
 
 /// Capability allowing the bearer to deny addresses from using the currency's coins--
@@ -105,7 +108,7 @@ pub struct DenyCapV2 {
 // === Supply <-> TreasuryCap morphing and accessors  ===
 
 /// Return the total number of `T`'s in circulation.
-pub fn total_supply<T>(cap: &TreasuryCap<T>) -> u64 {
+pub fn total_supply<T>(cap: &TreasuryCap) -> u64 {
     balance::supply_value(&cap.total_supply)
 }
 
@@ -113,46 +116,46 @@ pub fn total_supply<T>(cap: &TreasuryCap<T>) -> u64 {
 ///
 /// Operation is irreversible. Supply cannot be converted into a `TreasuryCap` due
 /// to different security guarantees (TreasuryCap can be created only once for a type)
-pub fn treasury_into_supply<T>(treasury: TreasuryCap<T>) -> Supply<T> {
+pub fn treasury_into_supply<T>(treasury: TreasuryCap) -> Supply {
     let TreasuryCap { id, total_supply } = treasury;
     id.delete();
     total_supply
 }
 
 /// Get immutable reference to the treasury's `Supply`.
-pub fn supply_immut<T>(treasury: &TreasuryCap<T>) -> &Supply<T> {
+pub fn supply_immut<T>(treasury: &TreasuryCap) -> &Supply {
     &treasury.total_supply
 }
 
 /// Get mutable reference to the treasury's `Supply`.
-pub fn supply_mut<T>(treasury: &mut TreasuryCap<T>) -> &mut Supply<T> {
+pub fn supply_mut<T>(treasury: &mut TreasuryCap) -> &mut Supply {
     &mut treasury.total_supply
 }
 
 // === Balance <-> Coin accessors and type morphing ===
 
 /// Public getter for the coin's value
-pub fn value<T>(self: &Coin<T>) -> u64 {
+pub fn value<T>(self: &Coin) -> u64 {
     self.balance.value()
 }
 
 /// Get immutable reference to the balance of a coin.
-pub fn balance<T>(coin: &Coin<T>) -> &Balance<T> {
+pub fn balance<T>(coin: &Coin) -> &Balance {
     &coin.balance
 }
 
 /// Get a mutable reference to the balance of a coin.
-pub fn balance_mut<T>(coin: &mut Coin<T>) -> &mut Balance<T> {
+pub fn balance_mut<T>(coin: &mut Coin) -> &mut Balance {
     &mut coin.balance
 }
 
 /// Wrap a balance into a Coin to make it transferable.
-pub fn from_balance<T>(balance: Balance<T>, ) -> Coin<T> {
+pub fn from_balance<T>(balance: Balance, ) -> Coin {
     Coin { id: ID_GETTER.get_new_id(), balance }
 }
 
 /// Destruct a Coin wrapper and keep the balance.
-pub fn into_balance<T>(coin: Coin<T>) -> Balance<T> {
+pub fn into_balance<T>(coin: Coin) -> Balance {
     let Coin { id, balance } = coin;
     id.delete();
     balance
@@ -160,15 +163,15 @@ pub fn into_balance<T>(coin: Coin<T>) -> Balance<T> {
 
 /// Take a `Coin` worth of `value` from `Balance`.
 /// Aborts if `value > balance.value`
-pub fn take<T>(balance: &mut Balance<T>, value: u64, ) -> Coin<T> {
+pub fn take<T>(balance: &mut Balance, value: u64, ) -> Coin {
     Coin {
         id: ID_GETTER.get_new_id(),
         balance: balance.split(value),
     }
 }
 
-/// Put a `Coin<T>` to the `Balance<T>`.
-pub fn put<T>(balance: &mut Balance<T>, coin: Coin<T>) {
+/// Put a `Coin` to the `Balance`.
+pub fn put<T>(balance: &mut Balance, coin: Coin) {
     balance.join(into_balance(coin));
 }
 
@@ -176,7 +179,7 @@ pub fn put<T>(balance: &mut Balance<T>, coin: Coin<T>) {
 
 /// Consume the coin `c` and add its value to `self`.
 /// Aborts if `c.value + self.value > U64_MAX`
-pub fn join<T>(self: &mut Coin<T>, c: Coin<T>) {
+pub fn join<T>(self: &mut Coin, c: Coin) {
     let Coin { id, balance } = c;
     id.delete();
     self.balance.join(balance);
@@ -184,21 +187,21 @@ pub fn join<T>(self: &mut Coin<T>, c: Coin<T>) {
 
 /// Split coin `self` to two coins, one with balance `split_amount`,
 /// and the remaining balance is left is `self`.
-pub fn split<T>(self: &mut Coin<T>, split_amount: u64, ) -> Coin<T> {
-    take(&mut self.balance, split_amount, ctx)
+pub fn split<T>(coin: &mut Coin, split_amount: u64, ) -> Coin {
+    take(&mut coin.balance, split_amount)
 }
 
 /// Split coin `self` into `n - 1` coins with equal balances. The remainder is left in
 /// `self`. Return newly created coins.
-pub fn divide_into_n<T>(self: &mut Coin<T>, n: u64, ) -> Vec<Coin<T>> {
+pub fn divide_into_n<T>(coin: &mut Coin, n: u64, ): vector<Coin> {
     assert!(n > 0, "{}", EInvalidArg);
-    assert!(n <= value(self), "{}", ENotEnough);
+    assert!(n <= value(coin), "{}", ENotEnough);
 
-    let mut vec = Vec::new();
+    let mut vec = vector[];
     let mut i = 0;
-    let split_amount = value(self) / n;
+    let split_amount = value(coin) / n;
     while (i < n - 1) {
-        vec.push_back(self.split(split_amount, ctx));
+        vec.push_back(coin.split(split_amount, ctx));
         i = i + 1;
     };
     vec
@@ -206,12 +209,12 @@ pub fn divide_into_n<T>(self: &mut Coin<T>, n: u64, ) -> Vec<Coin<T>> {
 
 /// Make any Coin with a zero value. Useful for placeholding
 /// bids/payments or preemptively making empty balances.
-pub fn zero<T>() -> Coin<T> {
+pub fn zero<T>() -> Coin {
     Coin { id: ID_GETTER.get_new_id(), balance: balance::zero() }
 }
 
 /// Destroy a coin with value zero
-pub fn destroy_zero<T>(c: Coin<T>) {
+pub fn destroy_zero<T>(c: Coin) {
     let Coin { id, balance } = c;
     id.delete();
     balance.destroy_zero()
@@ -228,11 +231,9 @@ pub fn create_currency<T: drop>(
     symbol: vector<u8>,
     name: vector<u8>,
     description: vector<u8>,
-    icon_url: Option<Url>,
+    icon_url: Option<String>,
     
-) -> (TreasuryCap<T>, CoinMetadata<T>) {
-    // Make sure there's only one instance of the type T
-    assert!(sui::types::is_one_time_witness(&witness), "{}", EBadWitness);
+): (TreasuryCap, CoinMetadata) {
 
     (
         TreasuryCap {
@@ -242,9 +243,9 @@ pub fn create_currency<T: drop>(
         CoinMetadata {
             id: ID_GETTER.get_new_id(),
             decimals,
-            name: string::utf8(name),
-            symbol: string::string(symbol),
-            description: string::utf8(description),
+            name: name,
+            symbol: symbol,
+            description: description,
             icon_url,
         },
     )
@@ -252,7 +253,7 @@ pub fn create_currency<T: drop>(
 
 /// Create a coin worth `value` and increase the total supply
 /// in `cap` accordingly.
-pub fn mint<T>(cap: &mut TreasuryCap<T>, value: u64, ) -> Coin<T> {
+pub fn mint<T>(cap: &mut TreasuryCap, value: u64, ) -> Coin {
     Coin {
         id: ID_GETTER.get_new_id(),
         balance: cap.total_supply.increase_supply(value),
@@ -262,13 +263,13 @@ pub fn mint<T>(cap: &mut TreasuryCap<T>, value: u64, ) -> Coin<T> {
 /// Mint some amount of T as a `Balance` and increase the total
 /// supply in `cap` accordingly.
 /// Aborts if `value` + `cap.total_supply` >= U64_MAX
-pub fn mint_balance<T>(cap: &mut TreasuryCap<T>, value: u64) -> Balance<T> {
+pub fn mint_balance<T>(cap: &mut TreasuryCap, value: u64) -> Balance {
     cap.total_supply.increase_supply(value)
 }
 
 /// Destroy the coin `c` and decrease the total supply in `cap`
 /// accordingly.
-pub fn burn<T>(cap: &mut TreasuryCap<T>, c: Coin<T>) -> u64 {
+pub fn burn<T>(cap: &mut TreasuryCap, c: Coin) -> u64 {
     let Coin { id, balance } = c;
     id.delete();
     cap.total_supply.decrease_supply(balance)
@@ -278,70 +279,68 @@ pub fn burn<T>(cap: &mut TreasuryCap<T>, c: Coin<T>) -> u64 {
 
 /// Mint `amount` of `Coin` and send it to `recipient`. Invokes `mint()`.
 pub fn mint_and_transfer<T>(
-    c: &mut TreasuryCap<T>,
+    c: &mut TreasuryCap,
     amount: u64,
     recipient: address,
     
-) {
-    transfer::pub_transfer(mint(c, amount, ctx), recipient)
-}
+) {}
 
 // === Update coin metadata ===
 
 /// Update name of the coin in `CoinMetadata`
 pub fn update_name<T>(
-    _treasury: &TreasuryCap<T>,
-    metadata: &mut CoinMetadata<T>,
-    name: string,
+    _treasury: &TreasuryCap,
+    metadata: &mut CoinMetadata,
+    name: String,
 ) {
     metadata.name = name;
 }
 
 /// Update the symbol of the coin in `CoinMetadata`
 pub fn update_symbol<T>(
-    _treasury: &TreasuryCap<T>,
-    metadata: &mut CoinMetadata<T>,
-    symbol: string,
+    _treasury: &TreasuryCap,
+    metadata: &mut CoinMetadata,
+    symbol: String,
 ) {
     metadata.symbol = symbol;
 }
 
 /// Update the description of the coin in `CoinMetadata`
 pub fn update_description<T>(
-    _treasury: &TreasuryCap<T>,
-    metadata: &mut CoinMetadata<T>,
-    description: string,
+    _treasury: &TreasuryCap,
+    metadata: &mut CoinMetadata,
+    description: String,
 ) {
     metadata.description = description;
 }
 
 /// Update the url of the coin in `CoinMetadata`
 pub fn update_icon_url<T>(
-    _treasury: &TreasuryCap<T>,
-    metadata: &mut CoinMetadata<T>,
-    url: string,
+    _treasury: &TreasuryCap,
+    metadata: &mut CoinMetadata,
+    url: String,
 ) {
-    metadata.icon_url = option::some(url::new_unsafe(url));
+    metadata.icon_url = Some(url);
 }
 
 // === Get coin metadata fields for on-chain consumption ===
 
-pub fn get_decimals<T>(metadata: &CoinMetadata<T>) -> u8 {
+pub fn get_decimals<T>(metadata: &CoinMetadata) -> u8 {
     metadata.decimals
 }
 
-pub fn get_name<T>(metadata: &CoinMetadata<T>) -> string {
+pub fn get_name<T>(metadata: &CoinMetadata) -> String {
     metadata.name
 }
 
-pub fn get_symbol<T>(metadata: &CoinMetadata<T>) -> string {
+pub fn get_symbol<T>(metadata: &CoinMetadata) -> String {
     metadata.symbol
 }
 
-pub fn get_description<T>(metadata: &CoinMetadata<T>) -> string {
+pub fn get_description<T>(metadata: &CoinMetadata) -> String {
     metadata.description
 }
 
-pub fn get_icon_url<T>(metadata: &CoinMetadata<T>) -> Option<Url> {
+pub fn get_icon_url<T>(metadata: &CoinMetadata) -> Option<String> {
     metadata.icon_url
 }
