@@ -14,7 +14,6 @@ def move_to_rust(move_code):
         (r'fun', r'fn'), # Fun to fn
         (r'ascii', r'string'), # No need for ascii
         (r'string::String', r'String'), # Rename of string type
-        (r':\s*((&?mut )?&?[a-zA-Z0-9_]+(<[^>]+>)?)\s*{', r' -> \1 {'), # Return type from ":" to "->"
         (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
         (r'option::is_none\(&(\w+\.\w+)\)', r'\1.is_none()'), # Option is_none
         (r'option::fill\(&mut (\w+\.\w+), (\w+)\)', r'\1.replace(\2).unwrap()'), # Option fill (assignment if is None)
@@ -34,7 +33,7 @@ def move_to_rust(move_code):
         (r'UID', r'ID'), # Transform all to ID an then...
         (r'ID', r'u8'), # Use u8 for ID.
         (r'address', r'String'), # Use string for address type.
-        (r'vector<[^>]+>', r'Vec<\1>'), # Rename to rust vector type.
+        (r'vector<([^>]+)>', r'Vec<\1>'), # Rename to rust vector type.
     ]
 
     simplification_replacements = [
@@ -50,15 +49,21 @@ def move_to_rust(move_code):
 
     func_replacements = [
         remove_test_functions,
+        return_type_from_colon_to_arrow,
         add_new_object_mock,
         move_structs_and_consts_to_global_scope,
         remove_duplicate_line_breaks,
+        use_std_libs,
     ]
     
     rust_code = move_code
     # Apply replacements
     for pattern, replacement in regex_replacements:
-        rust_code = re.sub(pattern, replacement, rust_code)
+        try:
+            rust_code = re.sub(pattern, replacement, rust_code)
+        except:
+            breakpoint()
+            print("a")
     
     for replace_func in func_replacements:
         rust_code = replace_func(rust_code)
@@ -134,6 +139,33 @@ def _get_end_of_scope_line(lines, start_line):
 
     return i
 
+def return_type_from_colon_to_arrow(code):
+    lines = code.splitlines()
+    lines_to_correct = set()
+
+    i = 0
+    inside_func = False
+
+    while i < len(lines):
+        if "fn" in lines[i] and ("//" not in lines[i] or lines[i].index("fn") < lines[i].index("//")): # Not inside comment
+            inside_func = True
+        if inside_func and "{" in lines[i] and ("//" not in lines[i] or lines[i].rindex("{") < lines[i].index("//")):
+            j = i
+            while ":" not in lines[j] or ")" not in lines[j]:
+                j -= 1
+            if ")" not in lines[j] or (":" in lines[j] and lines[j].rindex(")") < lines[j].rindex(":")):
+                lines_to_correct.add(j)
+            inside_func = False
+        i += 1
+    
+    for line in lines_to_correct:
+        if "burn" in lines[line]:
+            breakpoint()
+        new_line = lines[line].rsplit(":", 1)
+        new_line = " ->".join(new_line)
+        lines[line] = new_line
+    
+    return "\n".join(lines)
 
 def add_new_object_mock(code):
     """Replaces calls to object::new(ctx) which assigns a specific UID in the blockchain
@@ -175,6 +207,23 @@ def remove_duplicate_line_breaks(code):
             del lines[i]
         else:
             i +=1
+    return "\n".join(lines)
+
+def use_std_libs(code):
+    use_lines = []
+
+    if "Balance" in code:
+        use_lines.append("use crate::sui_std::balance::balance;")
+        use_lines.append("use balance::Balance;")
+    if "Coin" in code:
+        use_lines.append("use crate::sui_std::coin::coin;")
+        use_lines.append("use coin::Coin;")
+    if "transfer" in code:
+        use_lines.append("use crate::sui_std::transfer::transfer;")
+
+    lines = code.splitlines()
+    lines = use_lines + [""] + lines
+
     return "\n".join(lines)
 
 def process_files(input_filepath):

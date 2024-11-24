@@ -52,10 +52,38 @@ pub struct Balance {
     value: u64,
 }
 
-/// Get the amount stored in a `Balance`.
-pub fn value(b: &Balance) -> u64 {
-    b.value
+impl Balance {
+    pub fn value(self: &Balance) -> u64 {
+        self.value
+    }
+    /// Join two balances together.
+    pub fn join(self: &mut Balance, balance: Balance) -> u64 {
+        let Balance { value } = balance;
+        self.value = self.value + value;
+        self.value
+    }
+    /// Withdraw all balance. After this the remaining balance must be 0.
+    pub fn withdraw_all(self: &mut Balance) -> Balance {
+        let value = self.value;
+        split(self, value)
+    }
+
+    /// Destroy a zero `Balance`.
+    pub fn destroy_zero(self: Balance) {
+        assert!(self.value == 0, "{}", ENonZero);
+        let Balance { value: _ } = self;
+    }
+
+
 }
+
+/// Split a `Balance` and take a sub balance from it.
+pub fn split(b: &mut Balance, value: u64) -> Balance {
+    assert!(b.value >= value, "{}", ENotEnough);
+    b.value = b.value - value;
+    Balance { value }
+}
+
 
 /// Get the `Supply` value.
 pub fn supply_value(supply: &Supply) -> u64 {
@@ -67,54 +95,31 @@ pub fn create_supply<T>(_: T) -> Supply {
     Supply { value: 0 }
 }
 
-/// Increase supply by `value` and create a new `Balance` with this value.
-pub fn increase_supply(s: &mut Supply, value: u64) -> Balance {
-    assert!(value < (18446744073709551615u64 - s.value), "{}", EOverflow);
-    s.value = s.value + value;
-    Balance { value }
+impl Supply{
+    /// Increase supply by `value` and create a new `Balance` with this value.
+    pub fn increase_supply(self: &mut Supply, value: u64) -> Balance {
+        assert!(value < (18446744073709551615u64 - self.value), "{}", EOverflow);
+        self.value = self.value + value;
+        Balance { value }
+    }
+
+    /// Burn a Balance and decrease Supply.
+    pub fn decrease_supply(self: &mut Supply, balance: Balance) -> u64 {
+        let Balance { value } = balance;
+        assert!(self.value >= value, "{}", EOverflow);
+        self.value = self.value - value;
+        value
+    }
+
+    /// Destroy a `Supply` preventing any further minting and burning.
+    pub fn destroy_supply(self: Supply) -> u64 {
+        let Supply { value } = self;
+        value
+    }
 }
 
-/// Burn a Balance and decrease Supply.
-pub fn decrease_supply(s: &mut Supply, balance: Balance) -> u64 {
-    let Balance { value } = balance;
-    assert!(s.value >= value, "{}", EOverflow);
-    s.value = s.value - value;
-    value
-}
 
 /// Create a zero `Balance` for type `T`.
 pub fn zero() -> Balance {
     Balance { value: 0 }
-}
-
-/// Join two balances together.
-pub fn join(b: &mut Balance, balance: Balance) -> u64 {
-    let Balance { value } = balance;
-    b.value = b.value + value;
-    b.value
-}
-
-/// Split a `Balance` and take a sub balance from it.
-pub fn split(b: &mut Balance, value: u64) -> Balance {
-    assert!(b.value >= value, "{}", ENotEnough);
-    b.value = b.value - value;
-    Balance { value }
-}
-
-/// Withdraw all balance. After this the remaining balance must be 0.
-pub fn withdraw_all(b: &mut Balance) -> Balance {
-    let value = b.value;
-    split(b, value)
-}
-
-/// Destroy a zero `Balance`.
-pub fn destroy_zero(balance: Balance) {
-    assert!(balance.value == 0, "{}", ENonZero);
-    let Balance { value: _ } = balance;
-}
-
-/// Destroy a `Supply` preventing any further minting and burning.
-pub fn destroy_supply(s: Supply) -> u64 {
-    let Supply { value } = s;
-    value
 }
