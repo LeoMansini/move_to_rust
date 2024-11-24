@@ -134,7 +134,7 @@ pub fn supply_mut(treasury: &mut TreasuryCap) -> &mut Supply {
 impl Coin{
     /// Public getter for the coin's value
     pub fn value(self: &Coin) -> u64 {
-        self.balance.value()
+        balance::value(&self.balance)
     }
 
     /// Get immutable reference to the balance of a coin.
@@ -149,7 +149,7 @@ impl Coin{
 
     /// Put a `Coin` to the `Balance`.
     pub fn put(balance: &mut Balance, coin: Coin) {
-        balance.join(into_balance(coin));
+        balance::join(balance, into_balance(coin));
     }
 
     // === Base Coin fnctionality ===
@@ -185,7 +185,7 @@ impl Coin{
     /// Destroy a coin with value zero
     pub fn destroy_zero(self: Coin) {
         let Coin { id, balance } = self;
-        balance.destroy_zero()
+        balance::destroy_zero(balance)
     }
 }
 
@@ -193,7 +193,7 @@ impl Coin{
 /// Aborts if `c.value + self.value > U64_MAX`
 pub fn join(this: &mut Coin, c: Coin) {
     let Coin { id, balance } = c;
-    this.balance.join(balance);
+    balance::join(&mut this.balance, balance);
 }
 
 /// Take a `Coin` worth of `value` from `Balance`.

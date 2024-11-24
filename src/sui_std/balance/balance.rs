@@ -52,29 +52,28 @@ pub struct Balance {
     value: u64,
 }
 
-impl Balance {
-    pub fn value(self: &Balance) -> u64 {
-        self.value
-    }
-    /// Join two balances together.
-    pub fn join(self: &mut Balance, balance: Balance) -> u64 {
-        let Balance { value } = balance;
-        self.value = self.value + value;
-        self.value
-    }
-    /// Withdraw all balance. After this the remaining balance must be 0.
-    pub fn withdraw_all(self: &mut Balance) -> Balance {
-        let value = self.value;
-        split(self, value)
-    }
+impl Balance {}
 
-    /// Destroy a zero `Balance`.
-    pub fn destroy_zero(self: Balance) {
-        assert!(self.value == 0, "{}", ENonZero);
-        let Balance { value: _ } = self;
-    }
+pub fn value(b: &Balance) -> u64 {
+    b.value
+}
+/// Withdraw all balance. After this the remaining balance must be 0.
+pub fn withdraw_all(b: &mut Balance) -> Balance {
+    let value = b.value;
+    split(b, value)
+}
 
+/// Destroy a zero `Balance`.
+pub fn destroy_zero(b: Balance) {
+    assert!(b.value == 0, "{}", ENonZero);
+    let Balance { value: _ } = b;
+}
 
+/// Join two balances together.
+pub fn join(b: &mut Balance, balance: Balance) -> u64 {
+    let Balance { value } = balance;
+    b.value = b.value + value;
+    b.value
 }
 
 /// Split a `Balance` and take a sub balance from it.
