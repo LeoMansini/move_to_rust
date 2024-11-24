@@ -131,62 +131,61 @@ pub fn supply_mut(treasury: &mut TreasuryCap) -> &mut Supply {
 
 // === Balance <-> Coin accessors and type morphing ===
 
-impl Coin{
-    /// Public getter for the coin's value
-    pub fn value(self: &Coin) -> u64 {
-        balance::value(&self.balance)
-    }
+impl Coin{}
+/// Public getter for the coin's value
+pub fn value(c: &Coin) -> u64 {
+    balance::value(&c.balance)
+}
 
-    /// Get immutable reference to the balance of a coin.
-    pub fn balance(self: &Coin) -> &Balance {
-        &self.balance
-    }
+/// Get immutable reference to the balance of a coin.
+pub fn balance(c: &Coin) -> &Balance {
+    &c.balance
+}
 
-    /// Get a mutable reference to the balance of a coin.
-    pub fn balance_mut(self: &mut Coin) -> &mut Balance {
-        &mut self.balance
-    }
+/// Get a mutable reference to the balance of a coin.
+pub fn balance_mut(c: &mut Coin) -> &mut Balance {
+    &mut c.balance
+}
 
-    /// Put a `Coin` to the `Balance`.
-    pub fn put(balance: &mut Balance, coin: Coin) {
-        balance::join(balance, into_balance(coin));
-    }
+/// Put a `Coin` to the `Balance`.
+pub fn put(balance: &mut Balance, coin: Coin) {
+    balance::join(balance, into_balance(coin));
+}
 
-    // === Base Coin fnctionality ===
+// === Base Coin fnctionality ===
 
-    /// Split coin `self` to two coins, one with balance `split_amount`,
-    /// and the remaining balance is left is `self`.
-    pub fn split(self: &mut Coin, split_amount: u64, ) -> Coin {
-        take(&mut self.balance, split_amount)
-    }
+/// Split coin `self` to two coins, one with balance `split_amount`,
+/// and the remaining balance is left is `self`.
+pub fn split(c: &mut Coin, split_amount: u64, ) -> Coin {
+    take(&mut c.balance, split_amount)
+}
 
-    /// Split coin `self` into `n - 1` coins with equal balances. The remainder is left in
-    /// `self`. Return newly created coins.
-    pub fn divide_into_n(self: &mut Coin, n: u64, ) -> Vec<Coin> {
-        assert!(n > 0, "{}", EInvalidArg);
-        assert!(n <= self.value(), "{}", ENotEnough);
+/// Split coin `self` into `n - 1` coins with equal balances. The remainder is left in
+/// `self`. Return newly created coins.
+pub fn divide_into_n(c: &mut Coin, n: u64, ) -> Vec<Coin> {
+    assert!(n > 0, "{}", EInvalidArg);
+    assert!(n <= value(c), "{}", ENotEnough);
 
-        let mut vec = Vec::new();
-        let mut i = 0;
-        let split_amount = self.value() / n;
-        while (i < n - 1) {
-            vec.push(self.split(split_amount));
-            i = i + 1;
-        };
-        vec
-    }
+    let mut vec = Vec::new();
+    let mut i = 0;
+    let split_amount = value(c) / n;
+    while (i < n - 1) {
+        vec.push(split(c, split_amount));
+        i = i + 1;
+    };
+    vec
+}
 
-    /// Make any Coin with a zero value. Useful for placeholding
-    /// bids/payments or preemptively making empty balances.
-    pub fn zero() -> Coin {
-        Coin { id: ID_GETTER.get_new_id(), balance: balance::zero() }
-    }
+/// Make any Coin with a zero value. Useful for placeholding
+/// bids/payments or preemptively making empty balances.
+pub fn zero() -> Coin {
+    Coin { id: ID_GETTER.get_new_id(), balance: balance::zero() }
+}
 
-    /// Destroy a coin with value zero
-    pub fn destroy_zero(self: Coin) {
-        let Coin { id, balance } = self;
-        balance::destroy_zero(balance)
-    }
+/// Destroy a coin with value zero
+pub fn destroy_zero(c: Coin) {
+    let Coin { id, balance } = c;
+    balance::destroy_zero(balance)
 }
 
 /// Consume the coin `c` and add its value to `self`.

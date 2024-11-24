@@ -1,3 +1,9 @@
+use crate::sui_std::balance::balance;
+use balance::Balance;
+use crate::sui_std::coin::coin;
+use coin::Coin;
+use crate::sui_std::transfer::transfer;
+
 pub struct NFT {
     id: u8,
     price: Balance,
@@ -38,16 +44,18 @@ pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 // Copyright (c) Sui Foundation, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+/// For when the loan amount exceed the pool amount
+const ELoanAmountExceedPool: u64 = 0;
+/// For when the repay amount do not match the initial loan amount
+const ERepayAmountInvalid: u64 = 1;
+
 pub struct flashloan__flashloan {}
 impl flashloan__flashloan {
     // === Imports ===
     
     // === Errors ===
 
-    /// For when the loan amount exceed the pool amount
-    const ELoanAmountExceedPool: u64 = 0;
-    /// For when the repay amount do not match the initial loan amount
-    const ERepayAmountInvalid: u64 = 1;
+    
 
     // === Structs ===
 
@@ -67,18 +75,18 @@ impl flashloan__flashloan {
     // === Public-Mutative Functions ===
 
     /// Deposit money into loan pool
-    pub fn deposit_pool(pool: &mut LoanPool, deposit: Coin<SUI>) {
+    pub fn deposit_pool(pool: &mut LoanPool, deposit: Coin) {
         balance::join(&mut pool.amount, coin::into_balance(deposit));
     }
 
     /// Function allows users to borrow from the loan pool.
-    /// It returns the borrowed [`Coin<SUI>`] and the [`Loan`] position 
+    /// It returns the borrowed [`Coin`] and the [`Loan`] position 
     /// enforcing users to fulfill before the PTB ends.
-    pub fn borrow(pool: &mut LoanPool, amount: u64, ): (Coin<SUI>, Loan) {
+    pub fn borrow(pool: &mut LoanPool, amount: u64, ) -> (Coin, Loan) {
         assert!(amount <= balance::value(&pool.amount), "{}", ELoanAmountExceedPool);
 
         (
-            coin::from_balance(balance::split(&mut pool.amount, amount), ctx),
+            coin::from_balance(balance::split(&mut pool.amount, amount)),
             Loan {
                 amount
             }
@@ -87,7 +95,7 @@ impl flashloan__flashloan {
 
     /// Repay the loan
     /// Users must execute this fnction to ensure the loan is repaid before the transaction ends.
-    pub fn repay(pool: &mut LoanPool, loan: Loan, payment: Coin<SUI>) {
+    pub fn repay(pool: &mut LoanPool, loan: Loan, payment: Coin) {
         let Loan { amount } = loan;
         assert!(coin::value(&payment) == amount, "{}", ERepayAmountInvalid);
 
@@ -95,7 +103,7 @@ impl flashloan__flashloan {
     }
 
     /// Mint NFT
-    pub fn mint_nft(payment: Coin<SUI>, ) -> NFT {
+    pub fn mint_nft(payment: Coin, ) -> NFT {
         NFT {
             id: ID_GETTER.get_new_id(),
             price: coin::into_balance(payment),
@@ -103,9 +111,8 @@ impl flashloan__flashloan {
     }
 
     /// Sell NFT
-    pub fn sell_nft(nft: NFT, ) -> Coin<SUI> {
+    pub fn sell_nft(nft: NFT, ) -> Coin {
         let NFT {id, price} = nft;
-        object::delete(id);
-        coin::from_balance(price, ctx)
+        coin::from_balance(price)
     }
 }   
