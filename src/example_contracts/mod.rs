@@ -1,2 +1,2 @@
-mod simple_warrior;
-mod flashloan;
+pub(crate) mod simple_warrior;
+pub(crate) mod flashloan;

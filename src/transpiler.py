@@ -16,7 +16,7 @@ def move_to_rust(move_code):
         (r'string::String', r'String'), # Rename of string type
         (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
         (r'option::is_none\(&(\w+\.\w+)\)', r'\1.is_none()'), # Option is_none
-        (r'option::fill\(&mut (\w+\.\w+), (\w+)\)', r'\1.replace(\2).unwrap()'), # Option fill (assignment if is None)
+        (r'option::fill\(&mut (\w+\.\w+), (\w+)\)', r'assert!(\1.replace(\2).is_none())'), # Option fill (assignment if is None, otherwise fail)
         (r'option::extract\(&mut (\w+\.\w+)\)', r'\1.take().unwrap()'), # Option extract (take)
         (r'option::none\(\)', r'None'), # Option None
         (r'option::some\(\)', r'Some'), # Option Some

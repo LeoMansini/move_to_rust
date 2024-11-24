@@ -169,7 +169,7 @@ pub fn divide_into_n(c: &mut Coin, n: u64, ) -> Vec<Coin> {
     let mut vec = Vec::new();
     let mut i = 0;
     let split_amount = value(c) / n;
-    while (i < n - 1) {
+    while i < n - 1 {
         vec.push(split(c, split_amount));
         i = i + 1;
     };

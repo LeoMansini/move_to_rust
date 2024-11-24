@@ -1,3 +1,4 @@
+
 const ENotEquipped: u64 = 1;
 
 const EAlreadyEquipped: u64 = 0;
@@ -55,7 +56,7 @@ impl simple_warrior__example {
 
     pub fn equip(warrior: &mut Warrior, sword: Sword) {
         assert!(warrior.sword.is_none(), "{}", EAlreadyEquipped);
-        warrior.sword.replace(sword).unwrap();
+        assert!(warrior.sword.replace(sword).is_none());
     }
 
     pub fn unequip(warrior: &mut Warrior) -> Sword {

@@ -1,1 +1,1 @@
-mod flashloan;
+pub(crate) mod flashloan;
