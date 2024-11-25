@@ -65,12 +65,11 @@ impl flashloan__flashloan {
     /// This is a hot potato struct, it enforces the users
     /// to repay the loan in the end of the transaction or within the same PTB.
     /// A dummy NFT to represent the flashloan fnctionality
-    fn init() {
-        let pool = LoanPool { 
+    pub fn init() -> LoanPool {
+        LoanPool { 
             id: ID_GETTER.get_new_id(), 
             amount: balance::zero() 
-        };
-        transfer::share_object(pool);
+        }
     }
     // === Public-Mutative Functions ===
 
