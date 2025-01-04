@@ -1,4 +1,3 @@
-use crate::sui_std::transfer::transfer;
 
 pub struct CallRegistry {
     id: u8,
@@ -42,7 +41,7 @@ pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 pub struct inorder__inorder {}
 impl inorder__inorder {
 
-    fn init() {
+    pub fn init() -> CallRegistry {
         let call_registry = CallRegistry {
             id: ID_GETTER.get_new_id(),
             num_calls: 0,
@@ -54,7 +53,7 @@ impl inorder__inorder {
         let veriman = call_registry.a_called;
         assert!(!veriman || call_registry.a_called, "{}", EInvariantBroken);
 
-        transfer::share_object(call_registry);
+        call_registry
     }
 
     pub fn a(call_registry: &mut CallRegistry) {

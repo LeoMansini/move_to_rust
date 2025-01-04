@@ -2,7 +2,6 @@ use crate::sui_std::balance::balance;
 use balance::Balance;
 use crate::sui_std::coin::coin;
 use coin::Coin;
-use crate::sui_std::transfer::transfer;
 
 pub struct NFT {
     id: u8,
@@ -65,12 +64,12 @@ impl flashloan__flashloan {
     /// This is a hot potato struct, it enforces the users
     /// to repay the loan in the end of the transaction or within the same PTB.
     /// A dummy NFT to represent the flashloan fnctionality
-    fn init() {
+    pub fn init() {
         let pool = LoanPool { 
             id: ID_GETTER.get_new_id(), 
             amount: balance::zero() 
         };
-        transfer::share_object(pool);
+        pool;
     }
     // === Public-Mutative Functions ===
 
@@ -82,11 +81,11 @@ impl flashloan__flashloan {
     /// Function allows users to borrow from the loan pool.
     /// It returns the borrowed [`Coin`] and the [`Loan`] position 
     /// enforcing users to fulfill before the PTB ends.
-    pub fn borrow(pool: &mut LoanPool, amount: u64, ): (Coin, Loan) {
+    pub fn borrow(pool: &mut LoanPool, amount: u64, ) -> (Coin, Loan) {
         assert!(amount <= balance::value(&pool.amount), "{}", ELoanAmountExceedPool);
 
         (
-            coin::from_balance(balance::split(&mut pool.amount, amount), ctx),
+            coin::from_balance(balance::split(&mut pool.amount, amount)),
             Loan {
                 amount
             }
@@ -113,7 +112,6 @@ impl flashloan__flashloan {
     /// Sell NFT
     pub fn sell_nft(nft: NFT, ) -> Coin {
         let NFT {id, price} = nft;
-        object::delete(id);
-        coin::from_balance(price, ctx)
+        coin::from_balance(price)
     }
 }   
