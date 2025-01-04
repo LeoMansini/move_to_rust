@@ -54,7 +54,7 @@ module inorder::inorder {
         assert!(!veriman || call_registry.a_called, EInvariantBroken);
     }
 
-    public fun c(call_registry: &mut CallRegistry) {
+    public fun c(call_registry: &mut CallRegistry): u64 {
         assert!(call_registry.a_called, EACallRequired);
         assert!(call_registry.b_called, EBCallRequired);
         

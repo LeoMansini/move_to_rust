@@ -18,6 +18,10 @@ pub struct LoanPool {
     amount: Balance,
 }
 
+const ERepayAmountInvalid: u64 = 1;
+
+const ELoanAmountExceedPool: u64 = 0;
+
 use std::sync::LazyLock;
 
 pub struct IdGetter {
@@ -44,18 +48,14 @@ pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 // Copyright (c) Sui Foundation, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-/// For when the loan amount exceed the pool amount
-const ELoanAmountExceedPool: u64 = 0;
-/// For when the repay amount do not match the initial loan amount
-const ERepayAmountInvalid: u64 = 1;
-
 pub struct flashloan__flashloan {}
 impl flashloan__flashloan {
     // === Imports ===
     
     // === Errors ===
 
-    
+    /// For when the loan amount exceed the pool amount
+    /// For when the repay amount do not match the initial loan amount
 
     // === Structs ===
 
@@ -65,11 +65,12 @@ impl flashloan__flashloan {
     /// This is a hot potato struct, it enforces the users
     /// to repay the loan in the end of the transaction or within the same PTB.
     /// A dummy NFT to represent the flashloan fnctionality
-    pub fn init() -> LoanPool {
-        LoanPool { 
+    fn init() {
+        let pool = LoanPool { 
             id: ID_GETTER.get_new_id(), 
             amount: balance::zero() 
-        }
+        };
+        transfer::share_object(pool);
     }
     // === Public-Mutative Functions ===
 
@@ -81,11 +82,11 @@ impl flashloan__flashloan {
     /// Function allows users to borrow from the loan pool.
     /// It returns the borrowed [`Coin`] and the [`Loan`] position 
     /// enforcing users to fulfill before the PTB ends.
-    pub fn borrow(pool: &mut LoanPool, amount: u64, ) -> (Coin, Loan) {
+    pub fn borrow(pool: &mut LoanPool, amount: u64, ): (Coin, Loan) {
         assert!(amount <= balance::value(&pool.amount), "{}", ELoanAmountExceedPool);
 
         (
-            coin::from_balance(balance::split(&mut pool.amount, amount)),
+            coin::from_balance(balance::split(&mut pool.amount, amount), ctx),
             Loan {
                 amount
             }
@@ -112,6 +113,7 @@ impl flashloan__flashloan {
     /// Sell NFT
     pub fn sell_nft(nft: NFT, ) -> Coin {
         let NFT {id, price} = nft;
-        coin::from_balance(price)
+        object::delete(id);
+        coin::from_balance(price, ctx)
     }
 }   

@@ -8,6 +8,14 @@ pub struct CallRegistry {
     c_called: bool,
 }
 
+const EInvariantBroken: u64 = 3;
+
+const ECCallRequired: u64 = 2;
+
+const EBCallRequired: u64 = 1;
+
+const EACallRequired: u64 = 0;
+
 use std::sync::LazyLock;
 
 pub struct IdGetter {
@@ -33,11 +41,6 @@ pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 
 pub struct inorder__inorder {}
 impl inorder__inorder {
-
-    const EACallRequired: u64 = 0;
-    const EBCallRequired: u64 = 1;
-    const ECCallRequired: u64 = 2;
-    const EInvariantBroken: u64 = 3;
 
     fn init() {
         let call_registry = CallRegistry {
@@ -78,7 +81,7 @@ impl inorder__inorder {
         assert!(!veriman || call_registry.a_called, "{}", EInvariantBroken);
     }
 
-    pub fn c(call_registry: &mut CallRegistry) {
+    pub fn c(call_registry -> &mut CallRegistry) -> u64 {
         assert!(call_registry.a_called, "{}", EACallRequired);
         assert!(call_registry.b_called, "{}", EBCallRequired);
         

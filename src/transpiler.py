@@ -95,12 +95,15 @@ def move_structs_and_consts_to_global_scope(code):
     braces_count = 0
 
     while i < len(lines):
+        #breakpoint()
         braces_count += lines[i].count('{')
         braces_count -= lines[i].count('}')
-        if braces_count > 1:
+        if braces_count > 0:
             if (
-                (lines[i].strip().startswith("struct"))
-                or (lines[i].strip().startswith("pub struct"))
+                braces_count > 1 and (
+                    (lines[i].strip().startswith("struct"))
+                    or (lines[i].strip().startswith("pub struct"))
+                )
             ):
                 end_of_inside_struct = _get_end_of_scope_line(lines, i)
                 struct_lines = lines[i:end_of_inside_struct + 1]
