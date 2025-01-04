@@ -2,7 +2,7 @@ use crate::sui_std::transfer::transfer;
 
 pub struct CallRegistry {
     id: u8,
-    numCalls: u64,
+    num_calls: u64,
     a_called: bool,
     b_called: bool,
     c_called: bool,
@@ -45,7 +45,7 @@ impl inorder__inorder {
     fn init() {
         let call_registry = CallRegistry {
             id: ID_GETTER.get_new_id(),
-            numCalls: 0,
+            num_calls: 0,
             a_called: false,
             b_called: false,
             c_called: false,
@@ -60,7 +60,7 @@ impl inorder__inorder {
     pub fn a(call_registry: &mut CallRegistry) {
         let veriman = call_registry.a_called;
         call_registry.a_called = true;
-        call_registry.numCalls+=1;
+        call_registry.num_calls+=1;
 
         assert!(!veriman || call_registry.a_called, "{}", EInvariantBroken);
     }
@@ -70,25 +70,25 @@ impl inorder__inorder {
         assert!(call_registry.a_called, "{}", EACallRequired);
         
         if call_registry.b_called {
-            call_registry.numCalls = 0;
+            call_registry.num_calls = 0;
             assert!(!veriman || call_registry.a_called, "{}", EInvariantBroken);
             return;
         }
 
         call_registry.b_called = true;
-        call_registry.numCalls+=1;
+        call_registry.num_calls+=1;
 
         assert!(!veriman || call_registry.a_called, "{}", EInvariantBroken);
     }
 
-    pub fn c(call_registry -> &mut CallRegistry) -> u64 {
+    pub fn c(call_registry: &mut CallRegistry) -> u64 {
         assert!(call_registry.a_called, "{}", EACallRequired);
         assert!(call_registry.b_called, "{}", EBCallRequired);
         
         call_registry.c_called = true;
-        call_registry.numCalls+=1;
+        call_registry.num_calls+=1;
 
-        return 3;
+        3
     }
 
 }   

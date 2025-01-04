@@ -9,7 +9,7 @@ module inorder::inorder {
 
     public struct CallRegistry has key {
         id: UID,
-        numCalls: u64,
+        num_calls: u64,
         a_called: bool,
         b_called: bool,
         c_called: bool,
@@ -18,7 +18,7 @@ module inorder::inorder {
     fun init(ctx: &mut TxContext) {
         let call_registry = CallRegistry {
             id: object::new(ctx),
-            numCalls: 0,
+            num_calls: 0,
             a_called: false,
             b_called: false,
             c_called: false,
@@ -33,7 +33,7 @@ module inorder::inorder {
     public fun a(call_registry: &mut CallRegistry) {
         let veriman = call_registry.a_called;
         call_registry.a_called = true;
-        call_registry.numCalls++;
+        call_registry.num_calls++;
 
         assert!(!veriman || call_registry.a_called, EInvariantBroken);
     }
@@ -43,13 +43,13 @@ module inorder::inorder {
         assert!(call_registry.a_called, EACallRequired);
         
         if call_registry.b_called {
-            call_registry.numCalls = 0;
+            call_registry.num_calls = 0;
             assert!(!veriman || call_registry.a_called, EInvariantBroken);
             return;
         }
 
         call_registry.b_called = true;
-        call_registry.numCalls++;
+        call_registry.num_calls++;
 
         assert!(!veriman || call_registry.a_called, EInvariantBroken);
     }
@@ -59,7 +59,7 @@ module inorder::inorder {
         assert!(call_registry.b_called, EBCallRequired);
         
         call_registry.c_called = true;
-        call_registry.numCalls++;
+        call_registry.num_calls++;
 
         return 3;
     }

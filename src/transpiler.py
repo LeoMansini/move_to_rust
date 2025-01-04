@@ -35,6 +35,7 @@ def move_to_rust(move_code):
         (r'ID', r'u8'), # Use u8 for ID.
         (r'address', r'String'), # Use string for address type.
         (r'vector<([^>]+)>', r'Vec<\1>'), # Rename to rust vector type.
+        (r'return (.+?)(;)?', r'\1'), # Return in rust
     ]
 
     simplification_replacements = [
@@ -63,7 +64,6 @@ def move_to_rust(move_code):
         try:
             rust_code = re.sub(pattern, replacement, rust_code)
         except:
-            breakpoint()
             print("a")
     
     for replace_func in func_replacements:
@@ -95,7 +95,6 @@ def move_structs_and_consts_to_global_scope(code):
     braces_count = 0
 
     while i < len(lines):
-        #breakpoint()
         braces_count += lines[i].count('{')
         braces_count -= lines[i].count('}')
         if braces_count > 0:
@@ -155,10 +154,11 @@ def return_type_from_colon_to_arrow(code):
             inside_func = True
         if inside_func and "{" in lines[i] and ("//" not in lines[i] or lines[i].rindex("{") < lines[i].index("//")):
             j = i
-            while ":" not in lines[j] or ")" not in lines[j]:
-                j -= 1
-            if ")" not in lines[j] or (":" in lines[j] and lines[j].rindex(")") < lines[j].rindex(":")):
-                lines_to_correct.add(j)
+            if "()" not in lines[i]:
+                while ":" not in lines[j] or ")" not in lines[j]:
+                    j -= 1
+                if ")" not in lines[j] or (":" in lines[j] and lines[j].rindex(")") < lines[j].rindex(":")):
+                    lines_to_correct.add(j)
             inside_func = False
         i += 1
     
