@@ -1,4 +1,7 @@
-module flashloan::flashloan {
+
+
+module inorder::inorder {
+
     const EACallRequired: u64 = 0;
     const EBCallRequired: u64 = 1;
     const ECCallRequired: u64 = 2;
@@ -24,7 +27,7 @@ module flashloan::flashloan {
         let veriman = call_registry.a_called;
         assert!(!veriman || call_registry.a_called, EInvariantBroken);
 
-        transfer::share_object(pool);
+        transfer::share_object(call_registry);
     }
 
     public fun a(call_registry: &mut CallRegistry) {

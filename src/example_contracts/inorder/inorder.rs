@@ -31,8 +31,9 @@ impl IdGetter {
 // Use LazyLock to initialize ID_GETTER
 pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 
-pub struct flashloan__flashloan {}
-impl flashloan__flashloan {
+pub struct inorder__inorder {}
+impl inorder__inorder {
+
     const EACallRequired: u64 = 0;
     const EBCallRequired: u64 = 1;
     const ECCallRequired: u64 = 2;
@@ -50,7 +51,7 @@ impl flashloan__flashloan {
         let veriman = call_registry.a_called;
         assert!(!veriman || call_registry.a_called, "{}", EInvariantBroken);
 
-        transfer::share_object(pool);
+        transfer::share_object(call_registry);
     }
 
     pub fn a(call_registry: &mut CallRegistry) {
