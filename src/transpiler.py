@@ -12,6 +12,7 @@ def move_to_rust(move_code):
         (r'\(package\)', r''), # Remove 'package' scope
         (r'entry fun', r'fun'), # Remove 'Entry'
         (r'fun', r'fn'), # Fun to fn
+        (r'\+\+', r'+=1'), # ++ not in rust syntaxis
         (r'ascii', r'string'), # No need for ascii
         (r'string::String', r'String'), # Rename of string type
         (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
