@@ -38,6 +38,7 @@ def move_to_rust(move_code):
         (r'return (.+?)(;)?', r'\1'), # Return in rust
         (r'transfer::share_object\((.+?)\)(;)?', r'\1'), # Instead of move transfer, return
         (r'fn init', r'pub fn init'), # Set init as public
+        (r'VecMap', r'Map'), # Move map
     ]
 
     simplification_replacements = [
