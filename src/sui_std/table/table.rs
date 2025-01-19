@@ -1,4 +1,5 @@
 
+use std::ops::{Index, IndexMut};
 use std::sync::LazyLock;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -32,6 +33,22 @@ pub struct Table<K: Key, V> {
     id: u8,
     map: HashMap<K, V>,
     size: u8,
+}
+
+impl<K: Key, V> Index<&K> for Table<K, V> {
+    type Output = V;
+
+    fn index(&self, key: &K) -> &Self::Output {
+        // Redirect to the underlying map's indexing behavior
+        &self.map[key]
+    }
+}
+
+impl<K: Key, V> IndexMut<&K> for Table<K, V> {
+    fn index_mut(&mut self, key: &K) -> &mut Self::Output {
+        // Redirect to the underlying map's indexing behavior
+        self.map.get_mut(key).unwrap()
+    }
 }
 
 pub fn new<K: Key, V>() -> Table<K, V> {
