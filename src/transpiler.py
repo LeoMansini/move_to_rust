@@ -24,7 +24,6 @@ def move_to_rust(move_code):
         (r'assert!\((.+?),\s*(.+?)\)', r'assert!(\1, "{}", \2)'), # Assert with string literal
         (r'ctx: &mut TxContext(,?)', r''), # Remove TxContxt. TODO: Might need to model this.
         (r'phantom ', r''), # Remove phantom
-        (r'(pub )?use .*', r''), # Bye imports
         (r'Balance<[^>]+>', r'Balance'), # Balance type not parametric.
         (r'Coin<[^>]+>', r'Coin'), # Coin type not parametric.
         (r'Supply<[^>]+>', r'Supply'), # Supply type not parametric.
@@ -218,20 +217,29 @@ def remove_duplicate_line_breaks(code):
 
 def use_std_libs(code):
     use_lines = []
-
-    if "Balance" in code:
-        use_lines.append("use crate::sui_std::balance::balance;")
-        use_lines.append("use balance::Balance;")
-    if "Coin" in code:
-        use_lines.append("use crate::sui_std::coin::coin;")
-        use_lines.append("use coin::Coin;")
-    if "transfer" in code:
-        use_lines.append("use crate::sui_std::transfer::transfer;")
+    indexes_to_delete = set()
 
     lines = code.splitlines()
-    lines = use_lines + [""] + lines
+    for i in range(len(lines)):
+        if "use" not in lines[i]:
+            continue
+        breakpoint()
+        if "Balance" in lines[i]:
+            use_lines.append("use crate::sui_std::balance::balance;\nuse balance::Balance;")
+            indexes_to_delete.add(i)
+        elif "Coin" in lines[i]:
+            use_lines.append("use crate::sui_std::coin::coin;\nuse coin::Coin;")
+            indexes_to_delete.add(i)
+        elif "transfer" in lines[i]:
+            use_lines.append("use crate::sui_std::transfer::transfer;")
+            indexes_to_delete.add(i)
+        elif "Table" in lines[i]:
+            use_lines.append("use crate::sui_std::table::table::Table;")
+            indexes_to_delete.add(i)
 
-    return "\n".join(lines)
+    lines = [lines[i] for i in range(len(lines)) if i not in indexes_to_delete]
+
+    return "\n".join(use_lines + lines)
 
 def process_files(input_filepath):
     try:

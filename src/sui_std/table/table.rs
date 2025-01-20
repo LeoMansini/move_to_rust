@@ -26,13 +26,13 @@ impl IdGetter {
 // Use LazyLock to initialize ID_GETTER
 pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 
-trait Key: Eq + Hash {}
+pub trait Key: Eq + Hash {}
 impl<T> Key for T where T: Eq + Hash {}
 
 pub struct Table<K: Key, V> {
-    id: u8,
-    map: HashMap<K, V>,
-    size: u8,
+    pub id: u8,
+    pub map: HashMap<K, V>,
+    pub size: u8,
 }
 
 impl<K: Key, V> Index<&K> for Table<K, V> {
