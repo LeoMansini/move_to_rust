@@ -1,6 +1,6 @@
 use crate::example_contracts::simple_ds_chief::simple_ds_chief::{Address, DSChief, SimpleDSChief__SimpleDSChief};
 use crate::sui_std::table::table::{Table, Key};
-use kani::prelude::Arbitrary;
+use kani::Arbitrary;
 use std::collections::HashMap;
 
 impl Arbitrary for Address {
@@ -36,7 +36,7 @@ impl<K: Key, V> Arbitrary for Table<K, V> {
     // Custom method to generate arbitrary `Address`
     fn arbitrary() -> Self {
         // Generate arbitrary `u64` value for `id`
-        let map: HashMap<K, V> = kani::value();
+        let map: HashMap<K, V> = kani::any();
         Table {
             id: kani::any(),
             map: map,
@@ -62,17 +62,26 @@ impl Arbitrary for DSChief {
 
 #[kani::proof]
 #[kani::unwind(5)]
-pub fn try_generic_inorder() {
+pub fn try_generic_dschief() {
     let mut dschief: DSChief = kani::any();
     while true {
         let x: u8 = kani::any();
         kani::assume(x < 3);
         match x {
-            0=> SimpleDSChief__SimpleDSChief::a(&mut dschief),
-            1=> SimpleDSChief__SimpleDSChief::b(&mut dschief),
-            2=> {SimpleDSChief__SimpleDSChief::c(&mut dschief);},
+            0=> SimpleDSChief__SimpleDSChief::lock(&mut dschief, kani::any(), kani::any()),
+            1=> SimpleDSChief__SimpleDSChief::free(&mut dschief, kani::any(), kani::any()),
+            2=> {SimpleDSChief__SimpleDSChief::voteYays(&mut dschief, kani::any(), kani::any());},
             _=>{}
         }
     }
 
 }
+
+// Need to assume this invariant, and possibly assume the sender is in the hashmaps.
+
+//function checkAnInvariant() public {
+//    bytes32 senderSlate = votes[msg.sender];
+//    address option = slates[senderSlate];
+//    uint256 senderDeposit = deposits[msg.sender];
+//    assert(approvals[option] >= senderDeposit);
+//}
