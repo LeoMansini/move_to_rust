@@ -1,7 +1,8 @@
 use crate::example_contracts::simple_ds_chief::simple_ds_chief::{Address, DSChief, SimpleDSChief__SimpleDSChief};
+use crate::sui_std::table::table;
 use crate::sui_std::table::table::{Table, Key};
 use kani::Arbitrary;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 impl Arbitrary for Address {
     // Custom method to generate arbitrary `Address`
@@ -48,15 +49,44 @@ impl<K: Key + Arbitrary + Clone, V: Arbitrary + Clone> Arbitrary for Table<K, V>
 impl Arbitrary for DSChief {
     // Custom method to generate arbitrary `Address`
     fn any() -> Self {
+        let mut common_keys = HashSet::new();
+        let size: u8 = kani::any();
+        kani::assume(size > 0 && size <= 5); // Prevent excessive keys
+
+        for _ in 1..size { // No empty cases
+            common_keys.insert(Address::any());
+        }
+
+        let mut votes = table::new();
+        let mut approvals = table::new();
+        let mut deposits = table::new();
+
+        for key in &common_keys {
+            table::add(&mut votes, key.clone(), kani::any());
+            table::add(&mut approvals, key.clone(), kani::any());
+            table::add(&mut deposits, key.clone(), kani::any());
+        }
+
         // Generate arbitrary `u64` value for `id`
         DSChief {
             id: kani::any(),
             slates: kani::any(),
-            votes: kani::any(),
-            approvals: kani::any(),
-            deposits: kani::any(),
+            votes: votes,
+            approvals: approvals,
+            deposits: deposits,
         }
     }
+}
+
+pub fn get_random_key<K, V>(table: &Table<K, V>) -> K
+where
+    K: Key + Arbitrary + Clone, V: Arbitrary + Clone
+{
+    let keys: Vec<K> = table.map.keys().cloned().collect();
+    let idx: usize = kani::any();
+    kani::assume(idx < keys.len()); // Ensure the index is valid
+
+    keys[idx].clone()
 }
 
 
@@ -64,13 +94,16 @@ impl Arbitrary for DSChief {
 #[kani::unwind(3)]
 pub fn try_generic_dschief() {
     let mut dschief: DSChief = kani::any();
-    while true {
+    
+    loop {
+        let address: Address = get_random_key(&dschief.deposits);
+        let address2: Address = get_random_key(&dschief.deposits);
         let x: u8 = kani::any();
         kani::assume(x < 3);
         match x {
-            0=> SimpleDSChief__SimpleDSChief::lock(&mut dschief, &kani::any(), kani::any()),
-            1=> SimpleDSChief__SimpleDSChief::free(&mut dschief, &kani::any(), kani::any()),
-            2=> {SimpleDSChief__SimpleDSChief::voteYays(&mut dschief, &kani::any(), kani::any());},
+            0=> SimpleDSChief__SimpleDSChief::lock(&mut dschief, &address, kani::any()),
+            1=> SimpleDSChief__SimpleDSChief::free(&mut dschief, &address, kani::any()),
+            2=> {SimpleDSChief__SimpleDSChief::voteYays(&mut dschief, &address, address2);},
             _=>{}
         }
     }
