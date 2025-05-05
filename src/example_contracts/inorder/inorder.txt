@@ -1,0 +1,40 @@
+contract InOrder {
+    bool public a_called = false;
+    bool public b_called = false;
+    bool public c_called = false;
+    
+    int public num_calls = 0;
+    
+    constructor () public {
+        bool VERIMAN_previously_nhixfelm = a_called;
+        assert ((!( VERIMAN_previously_nhixfelm ) ) ||( a_called ) );
+    }
+    
+    function a () public {
+        bool VERIMAN_previously_nhixfelm = a_called;
+        a_called = true;
+        num_calls ++;
+        assert ((!( VERIMAN_previously_nhixfelm ) ) ||(a_called ) );
+    }
+    
+    function b () public {
+        bool VERIMAN_previously_nhixfelm = a_called;
+        require ( a_called );
+        if ( b_called ) {
+            num_calls = 0;
+            assert ((!(VERIMAN_previously_nhixfelm )) || ( a_called ) );
+            return;
+        }
+        b_called = true;
+        num_calls ++;
+        assert ((!(VERIMAN_previously_nhixfelm)) || ( a_called ) );
+    } 
+    
+    function c () public returns ( int ) {
+        require ( a_called );
+        require ( b_called );
+        c_called = true;
+        num_calls ++;
+        return 3;
+    }
+}

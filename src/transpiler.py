@@ -12,6 +12,7 @@ def move_to_rust(move_code):
         (r'\(package\)', r''), # Remove 'package' scope
         (r'entry fun', r'fun'), # Remove 'Entry'
         (r'fun', r'fn'), # Fun to fn
+        (r'\+\+', r'+=1'), # ++ not in rust syntaxis
         (r'ascii', r'string'), # No need for ascii
         (r'string::String', r'String'), # Rename of string type
         (r'option::is_some\(&(\w+\.\w+)\)', r'\1.is_some()'), # Option is_some
@@ -23,7 +24,6 @@ def move_to_rust(move_code):
         (r'assert!\((.+?),\s*(.+?)\)', r'assert!(\1, "{}", \2)'), # Assert with string literal
         (r'ctx: &mut TxContext(,?)', r''), # Remove TxContxt. TODO: Might need to model this.
         (r'phantom ', r''), # Remove phantom
-        (r'(pub )?use .*', r''), # Bye imports
         (r'Balance<[^>]+>', r'Balance'), # Balance type not parametric.
         (r'Coin<[^>]+>', r'Coin'), # Coin type not parametric.
         (r'Supply<[^>]+>', r'Supply'), # Supply type not parametric.
@@ -34,6 +34,10 @@ def move_to_rust(move_code):
         (r'ID', r'u8'), # Use u8 for ID.
         (r'address', r'String'), # Use string for address type.
         (r'vector<([^>]+)>', r'Vec<\1>'), # Rename to rust vector type.
+        (r'return (.+?)(;)?', r'\1'), # Return in rust
+        (r'transfer::share_object\((.+?)\)(;)?', r'\1'), # Instead of move transfer, return
+        (r'fn init', r'pub fn init'), # Set init as public
+        (r'VecMap', r'Map'), # Move map
     ]
 
     simplification_replacements = [
@@ -62,7 +66,6 @@ def move_to_rust(move_code):
         try:
             rust_code = re.sub(pattern, replacement, rust_code)
         except:
-            breakpoint()
             print("a")
     
     for replace_func in func_replacements:
@@ -96,10 +99,12 @@ def move_structs_and_consts_to_global_scope(code):
     while i < len(lines):
         braces_count += lines[i].count('{')
         braces_count -= lines[i].count('}')
-        if braces_count > 1:
+        if braces_count > 0:
             if (
-                (lines[i].strip().startswith("struct"))
-                or (lines[i].strip().startswith("pub struct"))
+                braces_count > 1 and (
+                    (lines[i].strip().startswith("struct"))
+                    or (lines[i].strip().startswith("pub struct"))
+                )
             ):
                 end_of_inside_struct = _get_end_of_scope_line(lines, i)
                 struct_lines = lines[i:end_of_inside_struct + 1]
@@ -151,10 +156,11 @@ def return_type_from_colon_to_arrow(code):
             inside_func = True
         if inside_func and "{" in lines[i] and ("//" not in lines[i] or lines[i].rindex("{") < lines[i].index("//")):
             j = i
-            while ":" not in lines[j] or ")" not in lines[j]:
-                j -= 1
-            if ")" not in lines[j] or (":" in lines[j] and lines[j].rindex(")") < lines[j].rindex(":")):
-                lines_to_correct.add(j)
+            if "()" not in lines[i]:
+                while ":" not in lines[j] or ")" not in lines[j]:
+                    j -= 1
+                if ")" not in lines[j] or (":" in lines[j] and lines[j].rindex(")") < lines[j].rindex(":")):
+                    lines_to_correct.add(j)
             inside_func = False
         i += 1
     
@@ -211,20 +217,29 @@ def remove_duplicate_line_breaks(code):
 
 def use_std_libs(code):
     use_lines = []
-
-    if "Balance" in code:
-        use_lines.append("use crate::sui_std::balance::balance;")
-        use_lines.append("use balance::Balance;")
-    if "Coin" in code:
-        use_lines.append("use crate::sui_std::coin::coin;")
-        use_lines.append("use coin::Coin;")
-    if "transfer" in code:
-        use_lines.append("use crate::sui_std::transfer::transfer;")
+    indexes_to_delete = set()
 
     lines = code.splitlines()
-    lines = use_lines + [""] + lines
+    for i in range(len(lines)):
+        if "use" not in lines[i]:
+            continue
+        breakpoint()
+        if "Balance" in lines[i]:
+            use_lines.append("use crate::sui_std::balance::balance;\nuse balance::Balance;")
+            indexes_to_delete.add(i)
+        elif "Coin" in lines[i]:
+            use_lines.append("use crate::sui_std::coin::coin;\nuse coin::Coin;")
+            indexes_to_delete.add(i)
+        elif "transfer" in lines[i]:
+            use_lines.append("use crate::sui_std::transfer::transfer;")
+            indexes_to_delete.add(i)
+        elif "Table" in lines[i]:
+            use_lines.append("use crate::sui_std::table::table::Table;")
+            indexes_to_delete.add(i)
 
-    return "\n".join(lines)
+    lines = [lines[i] for i in range(len(lines)) if i not in indexes_to_delete]
+
+    return "\n".join(use_lines + lines)
 
 def process_files(input_filepath):
     try:

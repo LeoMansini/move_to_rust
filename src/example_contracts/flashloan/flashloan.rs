@@ -2,7 +2,6 @@ use crate::sui_std::balance::balance;
 use balance::Balance;
 use crate::sui_std::coin::coin;
 use coin::Coin;
-use crate::sui_std::transfer::transfer;
 
 pub struct NFT {
     id: u8,
@@ -17,6 +16,10 @@ pub struct LoanPool {
     id: u8,
     amount: Balance,
 }
+
+const ERepayAmountInvalid: u64 = 1;
+
+const ELoanAmountExceedPool: u64 = 0;
 
 use std::sync::LazyLock;
 
@@ -44,18 +47,14 @@ pub static ID_GETTER: LazyLock<IdGetter> = LazyLock::new(|| IdGetter::new());
 // Copyright (c) Sui Foundation, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-/// For when the loan amount exceed the pool amount
-const ELoanAmountExceedPool: u64 = 0;
-/// For when the repay amount do not match the initial loan amount
-const ERepayAmountInvalid: u64 = 1;
-
 pub struct flashloan__flashloan {}
 impl flashloan__flashloan {
     // === Imports ===
     
     // === Errors ===
 
-    
+    /// For when the loan amount exceed the pool amount
+    /// For when the repay amount do not match the initial loan amount
 
     // === Structs ===
 
@@ -65,11 +64,12 @@ impl flashloan__flashloan {
     /// This is a hot potato struct, it enforces the users
     /// to repay the loan in the end of the transaction or within the same PTB.
     /// A dummy NFT to represent the flashloan fnctionality
-    pub fn init() -> LoanPool {
-        LoanPool { 
+    pub fn init() {
+        let pool = LoanPool { 
             id: ID_GETTER.get_new_id(), 
             amount: balance::zero() 
-        }
+        };
+        pool;
     }
     // === Public-Mutative Functions ===
 
